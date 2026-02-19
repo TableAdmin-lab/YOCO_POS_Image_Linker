@@ -345,7 +345,6 @@
         const syncToCloud = async (isFinished = false) => {
             if (!user || !userName) return;
             
-            // SANITIZE userAnswers to remove undefined
             const sanitizedUserAnswers = userAnswers.map(ua => ({
                 selectedText: ua.selectedText || "",
                 isCorrect: !!ua.isCorrect,
@@ -358,7 +357,7 @@
                 score,
                 currentQuestionIndex,
                 answersLog,
-                userAnswers: sanitizedUserAnswers, // SYNCED
+                userAnswers: sanitizedUserAnswers,
                 shuffledQuestions,
                 isFinished,
                 lastUpdated: serverTimestamp()
@@ -367,33 +366,39 @@
                 await setDoc(docRef, data, { merge: true });
                 els.saveIndicator.style.opacity = '1';
                 setTimeout(() => els.saveIndicator.style.opacity = '0', 2000);
-            } catch (e) { console.error("Cloud save failed", e); }
+            } catch (e) { 
+                console.warn("Cloud save failed (local mode only):", e); 
+            }
         };
 
         const syncFromCloud = async () => {
             if (!user) return;
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'exam_results', user.uid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const cloudData = docSnap.data();
-                userName = cloudData.userName;
-                score = cloudData.score;
-                currentQuestionIndex = cloudData.currentQuestionIndex;
-                answersLog = cloudData.answersLog || [];
-                userAnswers = cloudData.userAnswers || []; // RETRIEVED
-                shuffledQuestions = cloudData.shuffledQuestions;
-                
-                els.userDisplayText.textContent = userName;
-                els.userDisplayText.classList.remove('hidden');
-                els.userDisplay.classList.remove('hidden');
-                
-                els.startScreen.classList.add('hidden');
-                if (cloudData.isFinished) {
-                    renderResultsUI();
-                } else {
-                    els.questionScreen.classList.remove('hidden');
-                    renderQuestion();
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    userName = cloudData.userName;
+                    score = cloudData.score;
+                    currentQuestionIndex = cloudData.currentQuestionIndex;
+                    answersLog = cloudData.answersLog || [];
+                    userAnswers = cloudData.userAnswers || [];
+                    shuffledQuestions = cloudData.shuffledQuestions;
+                    
+                    els.userDisplayText.textContent = userName;
+                    els.userDisplayText.classList.remove('hidden');
+                    els.userDisplay.classList.remove('hidden');
+                    
+                    els.startScreen.classList.add('hidden');
+                    if (cloudData.isFinished) {
+                        renderResultsUI();
+                    } else {
+                        els.questionScreen.classList.remove('hidden');
+                        renderQuestion();
+                    }
                 }
+            } catch (error) {
+                console.warn("Sync from cloud failed, utilizing local state", error);
             }
         };
 
@@ -404,6 +409,8 @@
                 const results = [];
                 snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
                 renderDashboard(results);
+            }, (error) => {
+                console.warn("Dashboard access denied or failed:", error);
             });
         };
 
@@ -568,7 +575,7 @@
                         else if (b === btn) b.classList.add('border-red-500', 'bg-red-500/10');
                     });
                     els.feedbackTitle.textContent = opt.isCorrect ? "Correct" : "Incorrect";
-                    els.feedbackTitle.className = opt.isCorrect ? "font-black text-xl mb-1 text-green-500 uppercase tracking-tight" : "font-black text-xl mb-1 text-red-500 uppercase tracking-tight";
+                    els.feedbackTitle.className = opt.isCorrect ? "font-black text-xl mb-1 text-green-500 uppercase tracking-tight" : "font-black text-xl mb-1 text-green-500 uppercase tracking-tight";
                     els.feedbackRationale.textContent = opt.rationale || "";
                     els.feedbackIcon.innerHTML = opt.isCorrect ? `<div class="bg-green-500/10 p-3 rounded-full border border-green-500/20"><svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>` : `<div class="bg-red-500/10 p-3 rounded-full border border-red-500/20"><svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></div>`;
                     document.getElementById('next-btn').querySelector('span').textContent = "Continue";
