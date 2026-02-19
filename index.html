@@ -183,6 +183,11 @@
                 </div>
 
                 <div class="flex flex-wrap gap-4 justify-center">
+                    <!-- Admin Only Back Button -->
+                    <button id="admin-back-dashboard-btn" onclick="backToDashboard()" class="hidden bg-white/10 text-white font-bold py-5 px-10 rounded-full hover:bg-white/20 transition-all shadow-xl border border-white/10">
+                        Back to Dashboard
+                    </button>
+                    
                     <button onclick="startReview()" class="bg-white text-black font-bold py-5 px-10 rounded-full hover:bg-white/90 transition-all shadow-xl">
                         Review Performance
                     </button>
@@ -319,6 +324,7 @@
             candidateNameDisplay: document.getElementById('candidate-name-display'),
             moduleBreakdown: document.getElementById('module-breakdown'),
             exitReviewBtn: document.getElementById('exit-review-btn'),
+            adminBackDashboardBtn: document.getElementById('admin-back-dashboard-btn'),
             
             adminPwInput: document.getElementById('admin-pw-input'),
             adminMsg: document.getElementById('admin-msg'),
@@ -410,7 +416,8 @@
                 snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
                 renderDashboard(results);
             }, (error) => {
-                console.warn("Dashboard access denied or failed:", error);
+                console.error("Dashboard Access Error:", error);
+                els.dashboardContent.innerHTML = `<div class="text-center py-10 text-red-500 font-bold"><p>ACCESS DENIED</p><p class="text-xs mt-2 text-white/50">Ensure Firestore Rules allow reading 'exam_results' for authenticated users.</p></div>`;
             });
         };
 
@@ -575,7 +582,7 @@
                         else if (b === btn) b.classList.add('border-red-500', 'bg-red-500/10');
                     });
                     els.feedbackTitle.textContent = opt.isCorrect ? "Correct" : "Incorrect";
-                    els.feedbackTitle.className = opt.isCorrect ? "font-black text-xl mb-1 text-green-500 uppercase tracking-tight" : "font-black text-xl mb-1 text-green-500 uppercase tracking-tight";
+                    els.feedbackTitle.className = opt.isCorrect ? "font-black text-xl mb-1 text-green-500 uppercase tracking-tight" : "font-black text-xl mb-1 text-red-500 uppercase tracking-tight";
                     els.feedbackRationale.textContent = opt.rationale || "";
                     els.feedbackIcon.innerHTML = opt.isCorrect ? `<div class="bg-green-500/10 p-3 rounded-full border border-green-500/20"><svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>` : `<div class="bg-red-500/10 p-3 rounded-full border border-red-500/20"><svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></div>`;
                     document.getElementById('next-btn').querySelector('span').textContent = "Continue";
@@ -617,6 +624,13 @@
                 const color = mPct >= 80 ? 'bg-green-500' : (mPct >= 50 ? 'bg-yellow-500' : 'bg-red-500');
                 els.moduleBreakdown.innerHTML += `<div><div class="flex justify-between text-xs mb-3"><span class="font-bold text-white uppercase tracking-widest">${module}</span><span class="font-black text-white/60">${mPct}% (${stats.correct}/${stats.total})</span></div><div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden"><div class="${color} h-1.5 rounded-full" style="width: ${mPct}%"></div></div></div>`;
             });
+
+            // Toggle admin back button
+            if (isAdmin) {
+                els.adminBackDashboardBtn.classList.remove('hidden');
+            } else {
+                els.adminBackDashboardBtn.classList.add('hidden');
+            }
         };
 
         const renderDashboard = (results) => {
@@ -645,6 +659,12 @@
                 userName = data.userName; score = data.score; answersLog = data.answersLog; userAnswers = data.userAnswers || []; shuffledQuestions = data.shuffledQuestions;
                 renderResultsUI();
             }
+        };
+
+        window.backToDashboard = () => {
+            els.resultsScreen.classList.add('hidden');
+            els.questionScreen.classList.add('hidden');
+            els.adminDashboard.classList.remove('hidden');
         };
 
         window.toggleAdminPanel = () => {
