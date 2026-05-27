@@ -1,876 +1,450 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TABLE BY YOCO | Certification Exam</title>
+    <title>Yoco Image Linker</title>
+    <!-- Core Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PDF Generation Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { 
-            font-family: 'Inter', sans-serif;
-            background-color: #0d0d0d;
-            color: #ffffff;
-            overflow-x: hidden;
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyan: '#00B8E6',
+                    }
+                }
+            }
         }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1a1a1a; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #444; }
-
-        .yoco-blue { background-color: #00A3E1; }
-        .yoco-blue-text { color: #00A3E1; }
-        .yoco-card { background-color: #141414; border: 1px solid rgba(255,255,255,0.05); }
-        .yoco-input { background-color: #1f1f1f; border: 1px solid #333; color: white; }
-        .yoco-input:focus { border-color: #00A3E1; outline: none; ring: 2px; ring-color: rgba(0, 163, 225, 0.2); }
-        
-        .admin-tab-active { border-bottom: 2px solid #00A3E1; color: #00A3E1; }
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; }
+        .glass-card { backdrop-filter: blur(12px); }
+        .mode-badge {
+            background: linear-gradient(135deg, #00B8E6 0%, #0099CC 100%);
+            color: black; padding: 6px 14px; border-radius: 999px;
+            font-size: 10px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.1em; box-shadow: 0 4px 12px rgba(0, 184, 230, 0.3);
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white">
 
-    <!-- Header -->
-    <header class="bg-[#0d0d0d] border-b border-white/10 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <span class="text-xl md:text-2xl font-black tracking-tighter uppercase">TABLE BY <span class="text-[#00A3E1]">YOCO</span></span>
-                <div id="user-display" class="hidden h-4 w-[1px] bg-white/20 mx-2"></div>
-                <div id="user-display-text" class="text-[10px] text-white/40 font-bold uppercase tracking-widest hidden"></div>
+    <div class="max-w-[1400px] mx-auto px-6 py-12">
+        <header class="mb-16 relative">
+            <div class="absolute top-0 right-0 flex items-center gap-4">
+                <div class="mode-badge">STANDALONE LINKER</div>
+                <button id="clearAllBtn" class="px-6 py-3 rounded-xl bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white transition-all text-xs font-black uppercase tracking-widest hidden">Clear All</button>
+                <button id="themeToggle" class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-[#00B8E6] hover:scale-110 transition-all">
+                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
+                    </svg>
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                    </svg>
+                </button>
             </div>
-            <div class="flex items-center gap-4">
-                <div id="save-indicator" class="text-[9px] text-green-500/60 font-bold uppercase tracking-widest opacity-0 transition-opacity">Cloud Synced</div>
-                <div id="admin-indicator" class="hidden px-2 py-0.5 border border-red-500/50 text-red-500 text-[10px] font-bold rounded uppercase tracking-widest">Admin Mode</div>
-                <button id="admin-logout-btn" onclick="logoutAdmin()" class="hidden text-[10px] text-white/40 hover:text-white transition-colors uppercase tracking-widest font-bold">Exit</button>
-                <div class="text-xs font-bold text-white/60 tracking-tight">
-                    <span id="progress-text"></span>
+            <h1 class="text-5xl md:text-6xl font-extrabold tracking-tighter mb-4 leading-tight">
+                Image <span class="text-cyan">Linker</span>
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl">
+                Upload a completed Yoco Export, link images from Google Drive, and export the updated file.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Config Card -->
+                <div class="bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center mb-2">
+                        Google Drive Folder URL
+                        <div class="group relative inline-block ml-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 hover:text-cyan cursor-help transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 p-3 bg-slate-800 text-white text-[10px] rounded-xl shadow-xl z-10 text-center font-normal normal-case tracking-normal">
+                                Paste the public share link to your images folder. Folder must be set to "Anyone with the link can view".
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                            </div>
+                        </div>
+                    </label>
+                    <input type="text" id="driveFolderInput" placeholder="https://drive.google.com/drive/folders/..."
+                        class="w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white px-4 py-3 text-sm border border-slate-200 dark:border-slate-800 rounded-xl focus:border-cyan outline-none font-semibold mb-4">
+                    
+                    <button id="fetchDriveImagesBtn" class="w-full py-4 bg-cyan text-black rounded-xl font-black text-xs uppercase shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
+                        Fetch Drive Images
+                    </button>
+                </div>
+
+                <!-- Drop Zone Card -->
+                <div id="dropZone" class="border border-slate-200 dark:border-slate-800 rounded-3xl p-10 flex flex-col items-center justify-center bg-white dark:bg-[#0A0A0A] cursor-pointer hover:border-cyan group transition-all shadow-sm">
+                    <input type="file" id="fileInput" class="hidden" accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+                    <div class="w-16 h-16 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-cyan rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                    </div>
+                    <p class="font-bold text-center">Upload Yoco Export</p>
+                    <p class="text-[10px] text-slate-400 mt-2 uppercase tracking-widest text-center">.XLSX or .CSV</p>
+                </div>
+
+                <div id="statusMessage" class="hidden p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border"></div>
+            </div>
+
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                <div id="controlsBar" class="hidden glass-card bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-6 rounded-3xl flex gap-6 shadow-sm">
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase flex items-center mb-2">Search Items</label>
+                        <input type="text" id="masterFilter" placeholder="Filter results..."
+                            class="w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl focus:border-cyan outline-none">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="excelBtn" class="py-2.5 px-8 bg-cyan text-black text-xs font-black rounded-xl uppercase shadow-lg">Download Updated File</button>
+                    </div>
+                </div>
+
+                <div class="glass-card bg-white dark:bg-white/5 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden flex-1 min-h-[500px] flex flex-col shadow-sm">
+                    <div class="flex-1 overflow-x-auto">
+                        <table id="resultsTable" class="w-full text-sm text-left hidden">
+                            <thead id="tableHead" class="bg-slate-50 dark:bg-black/50 text-slate-400 uppercase text-[10px] font-bold">
+                                <tr>
+                                    <th class="px-8 py-5">Image</th>
+                                    <th class="px-8 py-5">Product Name</th>
+                                    <th class="px-8 py-5">Category</th>
+                                    <th class="px-8 py-5">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800/50"></tbody>
+                        </table>
+                        <div id="emptyState" class="flex flex-col items-center justify-center h-full py-40 text-slate-400 dark:text-slate-600">
+                            <p class="text-xl font-bold">Awaiting Upload</p>
+                            <p class="text-xs mt-2 uppercase tracking-widest opacity-50">Upload a Yoco export to start linking</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <!-- Progress Bar -->
-        <div class="w-full bg-white/5 h-[2px]">
-            <div id="progress-bar" class="yoco-blue h-[2px] transition-all duration-500 shadow-[0_0_10px_rgba(0,163,225,0.5)]" style="width: 0%"></div>
+    </div>
+
+    <!-- Image Picker Modal -->
+    <div id="imagePickerModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+        <div class="bg-white dark:bg-[#0A0A0A] rounded-3xl max-w-4xl w-full flex flex-col h-[80vh] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-[#0A0A0A] z-10">
+                <div>
+                    <h3 class="text-xl font-black uppercase tracking-tighter">Select Image</h3>
+                    <p class="text-slate-500 text-xs mt-1 font-medium">Linking image for: <span class="text-cyan font-bold" id="imagePickerProductName">Product Name</span></p>
+                </div>
+                <button id="closeImagePickerModal" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-black/20">
+                <input type="text" id="imagePickerSearch" placeholder="Search images by filename..."
+                    class="w-full bg-white dark:bg-black text-slate-900 dark:text-white px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl focus:border-cyan outline-none">
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="imagePickerGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+            </div>
         </div>
-    </header>
+    </div>
 
-    <!-- Main Content -->
-    <main class="flex-grow flex items-center justify-center p-4 md:p-6">
-        <div class="w-full max-w-4xl yoco-card rounded-2xl shadow-2xl overflow-hidden fade-in relative" id="quiz-container">
-            
-            <!-- Start Screen -->
-            <div id="start-screen" class="p-8 md:p-16 text-center">
-                <h2 class="text-5xl md:text-7xl font-extrabold text-white mb-6 tracking-tight leading-[0.95]">Revolutionise your expertise.</h2>
-                <p class="text-white/60 mb-10 max-w-2xl mx-auto text-lg leading-relaxed">Testing Product, Inventory, Employee and Site Management.</p>
-                
-                <div class="max-w-md mx-auto bg-white/5 p-8 rounded-2xl border border-white/5 mb-10 text-left">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-white/40 mb-2 uppercase tracking-widest">First Name</label>
-                            <input type="text" id="input-fname" class="w-full p-4 yoco-input rounded-xl focus:ring-2 focus:ring-[#00A3E1]/50 transition-all" placeholder="e.g. Jane">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-white/40 mb-2 uppercase tracking-widest">Surname</label>
-                            <input type="text" id="input-sname" class="w-full p-4 yoco-input rounded-xl focus:ring-2 focus:ring-[#00A3E1]/50 transition-all" placeholder="e.g. Doe">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex flex-col items-center gap-6">
-                    <button id="start-btn" onclick="startQuiz()" class="yoco-blue hover:brightness-110 text-white font-bold py-5 px-10 rounded-full transition-all shadow-xl text-lg flex items-center justify-center gap-2">
-                        Start Certification <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </button>
-                    <button onclick="toggleAdminPanel()" class="text-[10px] text-white/20 hover:text-white/60 uppercase tracking-widest font-bold transition-colors">
-                        Administrator Portal
-                    </button>
-                </div>
-            </div>
-
-            <!-- Admin Authentication Overlay -->
-            <div id="admin-modal" class="hidden absolute inset-0 bg-[#0d0d0d]/98 z-20 flex flex-col items-center justify-center p-12">
-                <h3 id="admin-modal-title" class="text-2xl font-bold mb-6 text-white tracking-tight">Admin Authentication</h3>
-                <input type="password" id="admin-pw-input" class="w-72 p-4 yoco-input rounded-xl text-center mb-4 text-xl tracking-widest" placeholder="••••••••">
-                <p id="admin-msg" class="text-red-500 text-sm mb-6 h-5 font-medium"></p>
-                <div class="flex gap-4">
-                    <button id="admin-verify-btn" onclick="verifyAdmin()" class="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-white/90 transition-all">Unlock</button>
-                    <button onclick="toggleAdminPanel()" class="bg-white/10 text-white px-8 py-3 rounded-full font-bold hover:bg-white/20 transition-all">Cancel</button>
-                </div>
-            </div>
-
-            <!-- Admin Dashboard Panel -->
-            <div id="admin-dashboard" class="hidden min-h-[500px] flex flex-col p-8">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-white/10 pb-4 gap-4">
-                    <div class="flex gap-6">
-                        <button class="text-sm font-bold uppercase tracking-widest pb-2 admin-tab-active">Dashboard</button>
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="generateReport()" class="bg-[#00A3E1]/20 border border-[#00A3E1]/50 text-[#00A3E1] px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#00A3E1]/30 transition-colors flex items-center gap-2">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            Download Report
-                        </button>
-                        <button onclick="toggleAdminDashboard()" class="bg-white/5 border border-white/10 text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-colors">Exit Dashboard</button>
-                    </div>
-                </div>
-
-                <div id="dashboard-content" class="overflow-y-auto max-h-[600px] space-y-4">
-                     <div class="text-center py-20 text-white/20 font-bold uppercase tracking-widest">Loading Records...</div>
-                </div>
-            </div>
-
-            <!-- Question Screen -->
-            <div id="question-screen" class="hidden">
-                <div class="p-8 md:p-14">
-                    <div class="flex justify-between items-start mb-8">
-                        <span class="inline-block px-4 py-1.5 bg-white/5 text-white/60 text-[10px] font-bold rounded-full tracking-widest uppercase border border-white/5">
-                            <span id="q-label-text">Question</span> <span id="q-number">1</span>
-                        </span>
-                        <div id="score-badge" class="text-xs font-bold text-[#00A3E1] hidden uppercase tracking-widest">Score: 0</div>
-                    </div>
-                    
-                    <h3 id="question-text" class="text-2xl md:text-3xl font-extrabold text-white mb-4 leading-tight tracking-tight text-center"></h3>
-                    <p id="hint-text" class="text-sm text-white/40 italic mb-10 bg-white/5 p-4 rounded-xl border-l-4 border-[#00A3E1] hidden mx-auto max-w-2xl text-center"></p>
-                    
-                    <div id="options-container" class="grid grid-cols-1 gap-3 md:gap-4 max-w-3xl mx-auto">
-                        <!-- Options injected here -->
-                    </div>
-                </div>
-                
-                <!-- Feedback / Footer -->
-                <div id="feedback-area" class="hidden border-t border-white/5 bg-white/[0.02] p-8 md:p-10">
-                    <div class="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 max-w-3xl mx-auto">
-                        <div id="feedback-icon" class="flex-shrink-0"></div>
-                        <div class="flex-grow">
-                            <h4 id="feedback-title" class="font-black text-xl mb-2 uppercase tracking-tight"></h4>
-                            <p id="feedback-rationale" class="text-white/60 text-base leading-relaxed"></p>
-                        </div>
-                    </div>
-                    <div class="mt-8 flex justify-center md:justify-end max-w-3xl mx-auto gap-4">
-                        <button id="exit-review-btn" onclick="exitReview()" class="hidden bg-white/10 text-white font-bold py-4 px-8 rounded-full transition-all hover:bg-white/20">Exit Review</button>
-                        <button id="next-btn" onclick="handleConfirmNext()" class="bg-white text-black font-bold py-4 px-10 rounded-full transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
-                            <span>Continue</span> <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Footer for Non-Admin (Confirm action) -->
-                <div id="simple-footer" class="hidden border-t border-white/5 bg-white/[0.02] p-8 md:p-10">
-                    <div class="max-w-3xl mx-auto flex justify-center md:justify-end">
-                        <button id="simple-next-btn" onclick="handleConfirmNext()" class="yoco-blue hover:brightness-110 text-white font-bold py-4 px-12 rounded-full transition-all shadow-xl flex items-center gap-2">
-                            Confirm & Next <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Results Screen -->
-            <div id="results-screen" class="hidden p-8 md:p-12 text-center">
-                <div id="result-icon" class="mb-8 inline-block p-6 rounded-full bg-white/5"></div>
-                <h2 class="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">Certification Results</h2>
-                <p class="text-white/40 mb-10 text-lg" id="candidate-name-display"></p>
-                
-                <div class="flex justify-center items-baseline gap-3 mb-10">
-                    <span id="final-score" class="text-7xl md:text-8xl font-black text-white">0</span>
-                    <span class="text-2xl md:text-3xl text-white/20 font-bold">/ 35</span>
-                </div>
-
-                <div class="w-full max-w-3xl mx-auto bg-white/5 rounded-full h-3 mb-12 overflow-hidden">
-                    <div id="final-progress" class="yoco-blue h-3 rounded-full transition-all duration-1000" style="width: 0%"></div>
-                </div>
-
-                <div class="text-left bg-white/[0.03] rounded-3xl p-6 md:p-10 border border-white/5 mb-10 max-w-3xl mx-auto">
-                    <h3 class="text-xs font-black text-white/40 mb-8 uppercase tracking-[0.2em]">Competency Analysis</h3>
-                    <div id="module-breakdown" class="space-y-8">
-                        <!-- Injected via JS -->
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap gap-4 justify-center">
-                    <!-- Admin Only Back Button -->
-                    <button id="admin-back-dashboard-btn" onclick="backToDashboard()" class="hidden bg-white/10 text-white font-bold py-5 px-10 rounded-full hover:bg-white/20 transition-all shadow-xl border border-white/10">
-                        Back to Dashboard
-                    </button>
-                    
-                    <button onclick="startReview()" class="bg-white text-black font-bold py-5 px-10 rounded-full hover:bg-white/90 transition-all shadow-xl">
-                        Review Performance
-                    </button>
-                    <button onclick="requestNewAttempt()" class="bg-white/5 border border-white/10 text-white font-bold py-5 px-10 rounded-full hover:bg-white/10 transition-all">
-                        New Attempt
-                    </button>
-                    <button onclick="goHome()" class="bg-white/5 border border-white/10 text-white font-bold py-5 px-10 rounded-full hover:bg-white/10 transition-all">
-                        Home
-                    </button>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <footer class="bg-[#0d0d0d] border-t border-white/5 py-10 text-center opacity-40">
-        <p class="text-[10px] font-bold uppercase tracking-[0.3em]">Excellence in Commerce</p>
-    </footer>
-
-    <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithPopup, onAuthStateChanged, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "AIzaSyBd1fD6L3yvpRJXKKkt2C7bNruPGCjkeXk",
-                authDomain: "teamtest-6b061.firebaseapp.com",
-                projectId: "teamtest-6b061",
-                storageBucket: "teamtest-6b061.firebasestorage.app",
-                messagingSenderId: "1080134997777",
-                appId: "1:1080134997777:web:8ecd20f0ffcac9057ddeb0"
-            };
-        
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'yoco-cert-portal';
-        const ALLOWED_ADMIN_PASSWORDS = ["Tr&ns&ct10n2018", "Davidlovesexams"];
-        const SESSION_KEY = "yoco_exam_session_v1";
-
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvvPbA8b1HsUg_vjv26XtarPto2hpwy_Q",
+            authDomain: "menutool-fbdba.firebaseapp.com",
+            projectId: "menutool-fbdba",
+            storageBucket: "menutool-fbdba.firebasestorage.app",
+            messagingSenderId: "234158065758",
+            appId: "1:234158065758:web:71572249708f057c670ccf",
+            measurementId: "G-HDF1C7H18Y"
+        };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
 
-        let user = null;
-        let isAdmin = false;
-        let isReviewMode = false;
-        let userName = "";
-        let currentQuestionIndex = 0;
-        let score = 0;
-        let answersLog = []; 
-        let userAnswers = []; // Store selected text and rationale
-        let shuffledQuestions = [];
-        let currentSelection = null;
-        let isConfirmed = false;
-        let pendingNewAttempt = false;
-        let dashboardData = []; // Store for PDF generation
-        const labels = ["A", "B", "C", "D"];
+        const init = () => {
+            let masterData = []; // Full raw rows from excel
+            let driveImages = [];
+            let currentlyPickingImageForIndex = null;
+            let fileHeaders = [];
+            let googleAccessToken = localStorage.getItem('linkerGoogleToken') || null;
 
-        const examDataRaw = {
-            "questions": [
-                { "module": "Product Management", "questionNumber": 1, "question": "In Product Management, what is the primary difference between a 'Finished Good' and a 'Raw Material'?", "answerOptions": [ { "text": "Finished Goods are sold to customers, while Raw Materials are ingredients used to make them.", "isCorrect": true, "rationale": "Finished Goods are the end products listed on the menu for sale, whereas Raw Materials are the stock components (like flour or cheese) tracked in inventory but not sold directly." }, { "text": "Raw Materials are sold at a higher tax rate than Finished Goods.", "isCorrect": false }, { "text": "Finished Goods cannot have a cost price attached to them.", "isCorrect": false }, { "text": "There is no functional difference; they are just labels.", "isCorrect": false } ], "hint": "Consider which item appears on the customer's receipt." },
-                { "module": "Product Management", "questionNumber": 2, "question": "When creating a Modifier as a 'Product' rather than an 'Option Type', what key feature is enabled?", "answerOptions": [ { "text": "Stock Movement", "isCorrect": true, "rationale": "Creating a modifier as a Product allows the system to track and deduct inventory." }, { "text": "Color Coding", "isCorrect": false }, { "text": "Font Size Adjustment", "isCorrect": false }, { "text": "Employee Permissions", "isCorrect": false } ] },
-                { "module": "Product Management", "questionNumber": 3, "question": "What is the purpose of 'Assigning a Product: Raw Material to finished good products'?", "answerOptions": [ { "text": "To create a recipe so stock is deducted automatically when the finished good is sold.", "isCorrect": true, "rationale": "This links the inventory to the sales item." }, { "text": "To increase the sales price automatically.", "isCorrect": false }, { "text": "To hide the raw material.", "isCorrect": false }, { "text": "To allow raw material to be sold as a side.", "isCorrect": false } ] },
-                { "module": "Product Management", "questionNumber": 4, "question": "If you need a modifier to ADD an item back into stock (e.g., 'No Cheese'), which feature would you use?", "answerOptions": [ { "text": "Reverse Stock Movement", "isCorrect": true, "rationale": "Reverse stock movement logic credits stock back." }, { "text": "Goods Receipt", "isCorrect": false }, { "text": "Stock Transfer", "isCorrect": false }, { "text": "Manufacturing", "isCorrect": false } ] },
-                { "module": "Product Management", "questionNumber": 5, "question": "What is the function of a 'Modifier Group'?", "answerOptions": [ { "text": "To organize a set of related modifiers and assign them to products.", "isCorrect": true, "rationale": "Modifier Groups allow you to create a list of options once and apply it to multiple products." }, { "text": "To group employees.", "isCorrect": false }, { "text": "To bundle finished goods.", "isCorrect": false }, { "text": "To set tax rates.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 6, "question": "When 'Manufacturing an Item', what happens to the Stock on Hand?", "answerOptions": [ { "text": "Raw Materials are decreased, and the Finished Good stock is increased.", "isCorrect": true, "rationale": "Manufacturing converts components into a product." }, { "text": "Both increase.", "isCorrect": false }, { "text": "Raw Materials stay same.", "isCorrect": false }, { "text": "Only updates cost price.", "isCorrect": false } ] },
-                { "module": "Product Management", "questionNumber": 7, "question": "Which category setup is necessary before you can organize your products on the screen?", "answerOptions": [ { "text": "Menu Categories", "isCorrect": true, "rationale": "Menu Categories are the folders that hold your products on the POS interface." }, { "text": "Supplier Categories", "isCorrect": false }, { "text": "Employee Categories", "isCorrect": false }, { "text": "Discount Categories", "isCorrect": false } ] },
-                { "module": "Product Management", "questionNumber": 8, "question": "Why would you create a Modifier as an 'Option Type' (Instruction)?", "answerOptions": [ { "text": "For requests that do not affect inventory, like 'No Ice'.", "isCorrect": true, "rationale": "Option Types convey information without triggering stock deduction." }, { "text": "To charge a premium.", "isCorrect": false }, { "text": "To track stock.", "isCorrect": false }, { "text": "To force ticket printing.", "isCorrect": false } ] },
-                { "module": "Product Management", "questionNumber": 9, "question": "In 'Creating: Editing Menu V2', what is the highest level of organization?", "answerOptions": [ { "text": "The Menu (e.g., Breakfast Menu)", "isCorrect": true, "rationale": "The Menu is the top-level container holding Categories." }, { "text": "The Product", "isCorrect": false }, { "text": "The Modifier", "isCorrect": false }, { "text": "The Stock Location", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 10, "question": "What is the primary purpose of 'Stock Locations'?", "answerOptions": [ { "text": "To differentiate inventory stored in different physical areas.", "isCorrect": true, "rationale": "Tracks how much is in the cellar versus the fridge." }, { "text": "To track seating.", "isCorrect": false }, { "text": "To organize menu.", "isCorrect": false }, { "text": "To assign employees.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 11, "question": "What process is used to enter new stock arriving from a Supplier?", "answerOptions": [ { "text": "Goods Receipt", "isCorrect": true, "rationale": "Creates a record of items entering the business." }, { "text": "Stock Transfer", "isCorrect": false }, { "text": "Stock Count", "isCorrect": false }, { "text": "Dispatch Note", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 12, "question": "Why would you use a 'Stock Template' for stock counts?", "answerOptions": [ { "text": "To create a pre-defined list of items to count.", "isCorrect": true, "rationale": "Ensures consistency and speed." }, { "text": "To automatically count.", "isCorrect": false }, { "text": "To send orders.", "isCorrect": false }, { "text": "To design receipts.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 13, "question": "What is the function of a 'Stock Transfer'?", "answerOptions": [ { "text": "Moving stock from one internal Stock Location to another.", "isCorrect": true, "rationale": "Moves items between internal locations." }, { "text": "Moving stock from supplier.", "isCorrect": false }, { "text": "Selling stock.", "isCorrect": false }, { "text": "Returning stock.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 14, "question": "If a bottle of wine is broken, how should this be recorded?", "answerOptions": [ { "text": "Stock Adjustment (Wastage)", "isCorrect": true, "rationale": "Removes item and records cost as loss." }, { "text": "Stock Transfer", "isCorrect": false }, { "text": "Credit Note", "isCorrect": false }, { "text": "Zero Value Sale", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 15, "question": "What is a 'Credit Note on Goods Receipts' used for?", "answerOptions": [ { "text": "Returning items to a supplier that were previously received.", "isCorrect": true, "rationale": "Reverses the Goods Receipt for specific items." }, { "text": "Giving customer credit.", "isCorrect": false }, { "text": "Taking a loan.", "isCorrect": false }, { "text": "Thanks note.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 16, "question": "What does 'BOH' stand for in Stock Counts?", "answerOptions": [ { "text": "Balance on Hand", "isCorrect": true, "rationale": "Theoretical amount of stock." }, { "text": "Back of House", "isCorrect": false }, { "text": "Best of Harvest", "isCorrect": false }, { "text": "Beginning of Hour", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 17, "question": "Why is it important to create Suppliers in the system?", "answerOptions": [ { "text": "To link Goods Receipts and generate Purchase Orders.", "isCorrect": true, "rationale": "Tracks sources for reordering." }, { "text": "Customer info.", "isCorrect": false }, { "text": "Supplier access.", "isCorrect": false }, { "text": "Assign tables.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 18, "question": "When performing a stock adjustment to 'Set' the stock, what happens?", "answerOptions": [ { "text": "The stock level is overwritten to the new number provided.", "isCorrect": true, "rationale": "Forces count to match reality." }, { "text": "Increased by number.", "isCorrect": false }, { "text": "Set to zero.", "isCorrect": false }, { "text": "Item locked.", "isCorrect": false } ] },
-                { "module": "Employee Management", "questionNumber": 19, "question": "What is the primary function of 'Employee Roles'?", "answerOptions": [ { "text": "To manage permissions and access levels.", "isCorrect": true, "rationale": "Defines what users can do (e.g., Void items)." }, { "text": "Track birthdays.", "isCorrect": false }, { "text": "Assign tables.", "isCorrect": false }, { "text": "Calculate tax.", "isCorrect": false } ] },
-                { "module": "Employee Management", "questionNumber": 20, "question": "When creating a new Employee, what is required to log in?", "answerOptions": [ { "text": "A PIN or Password", "isCorrect": true, "rationale": "Unique credentials to authenticate." }, { "text": "Home address", "isCorrect": false }, { "text": "Profile picture", "isCorrect": false }, { "text": "Bank account.", "isCorrect": false } ] },
-                { "module": "Employee Management", "questionNumber": 21, "question": "Where do you stop an employee from giving discounts?", "answerOptions": [ { "text": "In the Employee Role settings", "isCorrect": true, "rationale": "Uncheck 'Apply Discount' permission." }, { "text": "Product settings", "isCorrect": false }, { "text": "Discount settings", "isCorrect": false }, { "text": "Delete employee", "isCorrect": false } ] },
-                { "module": "Employee Management", "questionNumber": 22, "question": "How can a manager track individual staff performance?", "answerOptions": [ { "text": "By generating an Employee Sales Report.", "isCorrect": true, "rationale": "Provides metrics on specific staff members." }, { "text": "Checking drawer cash.", "isCorrect": false }, { "text": "Counting inventory.", "isCorrect": false }, { "text": "Wi-Fi logs.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 23, "question": "In 'Site Settings', what is the purpose of 'Prep Locations'?", "answerOptions": [ { "text": "To route specific products to specific printers.", "isCorrect": true, "rationale": "Ensures bar drinks go to bar printer, food to kitchen." }, { "text": "Customer seating.", "isCorrect": false }, { "text": "Ingredient storage.", "isCorrect": false }, { "text": "GPS location.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 24, "question": "Why might you have a custom Payment Method like 'UberEats'?", "answerOptions": [ { "text": "To track sales from that channel separately.", "isCorrect": true, "rationale": "Allows for reconciliation." }, { "text": "Give drivers discount.", "isCorrect": false }, { "text": "Call driver.", "isCorrect": false }, { "text": "Avoid tax.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 25, "question": "What is the function of 'Accounts (Members)'?", "answerOptions": [ { "text": "To allow customers to run a tab or pay on credit.", "isCorrect": true, "rationale": "Tracks owed balances." }, { "text": "Track employee hours.", "isCorrect": false }, { "text": "Manage invoices.", "isCorrect": false }, { "text": "Store recipes.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 26, "question": "What does setting a 'Credit Limit' do?", "answerOptions": [ { "text": "Prevents charging more once limit is reached.", "isCorrect": true, "rationale": "Financial control." }, { "text": "Auto charges card.", "isCorrect": false }, { "text": "Sends text.", "isCorrect": false }, { "text": "Deletes account.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 27, "question": "Why must you 'Register Devices'?", "answerOptions": [ { "text": "To authorize hardware to access store data.", "isCorrect": true, "rationale": "Security and licensing." }, { "text": "Track battery.", "isCorrect": false }, { "text": "Install games.", "isCorrect": false }, { "text": "Connect WiFi.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 28, "question": "What is 'Sit Down Area Setup'?", "answerOptions": [ { "text": "To design floor plan with tables.", "isCorrect": true, "rationale": "Table management." }, { "text": "Reserve seats.", "isCorrect": false }, { "text": "Calculate footage.", "isCorrect": false }, { "text": "Cleaning schedule.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 29, "question": "Difference between 'Percentage' and 'Fixed Amount' discount?", "answerOptions": [ { "text": "Percentage is a ratio, Fixed Amount is specific value.", "isCorrect": true, "rationale": "Percentage scales, fixed does not." }, { "text": "Staff vs Customer.", "isCorrect": false }, { "text": "Password required.", "isCorrect": false }, { "text": "No difference.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 30, "question": "What does 'Account Deposit' refer to?", "answerOptions": [ { "text": "Adding money to account balance (Pre-payment).", "isCorrect": true, "rationale": "Loading credit." }, { "text": "Banking cash.", "isCorrect": false }, { "text": "Refund.", "isCorrect": false }, { "text": "Security deposit.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 31, "question": "Benefit of Counting Stock per Category?", "answerOptions": [ { "text": "Allows different teams to count simultaneously.", "isCorrect": true, "rationale": "Specialization and speed." }, { "text": "Takes longer.", "isCorrect": false }, { "text": "Resets sales.", "isCorrect": false }, { "text": "Required by law.", "isCorrect": false } ] },
-                { "module": "Site Management", "questionNumber": 32, "question": "What happens if you delete a used 'Payment Method'?", "answerOptions": [ { "text": "Causes reporting errors; deactivation is safer.", "isCorrect": true, "rationale": "Breaks historical data." }, { "text": "Refunds transactions.", "isCorrect": false }, { "text": "Nothing.", "isCorrect": false }, { "text": "Deletes items.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 33, "question": "Purpose of 'Managing Stock Locations Per Product'?", "answerOptions": [ { "text": "To specify deduction location per product.", "isCorrect": true, "rationale": "Maps beer sales to bar fridge." }, { "text": "Reorganize shelves.", "isCorrect": false }, { "text": "Increase price.", "isCorrect": false }, { "text": "Prevent theft.", "isCorrect": false } ] },
-                { "module": "Inventory Management", "questionNumber": 34, "question": "What implies a 'Manufactured Item'?", "answerOptions": [ { "text": "Item created in-house from others.", "isCorrect": true, "rationale": "Batch cocktails, sauces." }, { "text": "Bought from factory.", "isCorrect": false }, { "text": "Furniture.", "isCorrect": false }, { "text": "Coupon.", "isCorrect": false } ] },
-                { "module": "Product Management", "questionNumber": 35, "question": "What does 'Minimum/Maximum Selection' do?", "answerOptions": [ { "text": "Enforces rules like 'Must choose 1'.", "isCorrect": true, "rationale": "Forces choices." }, { "text": "Limits creation.", "isCorrect": false }, { "text": "Sets price range.", "isCorrect": false }, { "text": "Limits stock.", "isCorrect": false } ] }
-            ]
-        };
+            const IMAGE_COL_INDEX = 21; // Standard Yoco export Image URL index
+            const NAME_COL_INDEX = 1;
+            const CAT_COL_INDEX = 5;
+            const PRICE_COL_INDEX = 3;
 
-        const els = {
-            startScreen: document.getElementById('start-screen'),
-            questionScreen: document.getElementById('question-screen'),
-            resultsScreen: document.getElementById('results-screen'),
-            adminModal: document.getElementById('admin-modal'),
-            adminDashboard: document.getElementById('admin-dashboard'),
-            adminModalTitle: document.getElementById('admin-modal-title'),
-            adminVerifyBtn: document.getElementById('admin-verify-btn'),
-            
-            inputFname: document.getElementById('input-fname'),
-            inputSname: document.getElementById('input-sname'),
-            userDisplay: document.getElementById('user-display'),
-            userDisplayText: document.getElementById('user-display-text'),
-            adminIndicator: document.getElementById('admin-indicator'),
-            adminLogoutBtn: document.getElementById('admin-logout-btn'),
-            
-            qText: document.getElementById('question-text'),
-            hintText: document.getElementById('hint-text'),
-            options: document.getElementById('options-container'),
-            progressBar: document.getElementById('progress-bar'),
-            progressText: document.getElementById('progress-text'),
-            saveIndicator: document.getElementById('save-indicator'),
-            
-            feedbackArea: document.getElementById('feedback-area'),
-            simpleFooter: document.getElementById('simple-footer'),
-            feedbackTitle: document.getElementById('feedback-title'),
-            feedbackRationale: document.getElementById('feedback-rationale'),
-            feedbackIcon: document.getElementById('feedback-icon'),
-            
-            scoreBadge: document.getElementById('score-badge'),
-            qNumber: document.getElementById('q-number'),
-            qLabelText: document.getElementById('q-label-text'),
-            finalScore: document.getElementById('final-score'),
-            finalProgress: document.getElementById('final-progress'),
-            resultIcon: document.getElementById('result-icon'),
-            candidateNameDisplay: document.getElementById('candidate-name-display'),
-            moduleBreakdown: document.getElementById('module-breakdown'),
-            exitReviewBtn: document.getElementById('exit-review-btn'),
-            adminBackDashboardBtn: document.getElementById('admin-back-dashboard-btn'),
-            
-            adminPwInput: document.getElementById('admin-pw-input'),
-            adminMsg: document.getElementById('admin-msg'),
-            dashboardContent: document.getElementById('dashboard-content')
-        };
-
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("Auth error:", err);
+            function showStatus(m, t) {
+                const s = document.getElementById('statusMessage'); s.textContent = m; s.classList.remove('hidden');
+                s.className = `p-4 rounded-2xl text-[10px] font-bold border transition-all ${t === 'error' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-cyan/5 text-cyan border-cyan/20'}`;
             }
-        };
 
-        onAuthStateChanged(auth, (firebaseUser) => {
-            user = firebaseUser;
-            if (user) syncFromCloud();
-        });
+            // --- CACHING LOGIC ---
+            function saveToCache() {
+                localStorage.setItem('linkerMasterData', JSON.stringify(masterData));
+                localStorage.setItem('linkerFileHeaders', JSON.stringify(fileHeaders));
+                localStorage.setItem('linkerDriveFolder', document.getElementById('driveFolderInput').value);
+            }
 
-        const syncToCloud = async (isFinished = false) => {
-            if (!user || !userName) return;
-            
-            const sanitizedUserAnswers = userAnswers.map(ua => ({
-                selectedText: ua.selectedText || "",
-                isCorrect: !!ua.isCorrect,
-                rationale: ua.rationale || ""
-            }));
+            function loadFromCache() {
+                const cachedData = localStorage.getItem('linkerMasterData');
+                const cachedHeaders = localStorage.getItem('linkerFileHeaders');
+                const cachedFolder = localStorage.getItem('linkerDriveFolder');
+                
+                if (cachedFolder) document.getElementById('driveFolderInput').value = cachedFolder;
+                
+                if (cachedData && cachedHeaders) {
+                    masterData = JSON.parse(cachedData);
+                    fileHeaders = JSON.parse(cachedHeaders);
+                    if (masterData.length > 0) {
+                        renderTable();
+                        showStatus("Loaded previous session from cache.", "info");
+                    }
+                }
+            }
 
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'exam_results', user.uid);
-            const data = {
-                userName,
-                score,
-                currentQuestionIndex,
-                answersLog,
-                userAnswers: sanitizedUserAnswers,
-                shuffledQuestions,
-                isFinished,
-                lastUpdated: serverTimestamp()
+            // --- THEME TOGGLE LOGIC ---
+            document.getElementById('themeToggle').onclick = () => {
+                document.documentElement.classList.toggle('dark');
+                document.getElementById('sunIcon').classList.toggle('hidden');
+                document.getElementById('moonIcon').classList.toggle('hidden');
             };
-            try {
-                await setDoc(docRef, data, { merge: true });
-                els.saveIndicator.style.opacity = '1';
-                setTimeout(() => els.saveIndicator.style.opacity = '0', 2000);
-            } catch (e) { 
-                console.warn("Cloud save failed (local mode only):", e); 
-            }
-        };
 
-        const syncFromCloud = async () => {
-            if (!user) return;
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'exam_results', user.uid);
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const cloudData = docSnap.data();
-                    userName = cloudData.userName;
-                    score = cloudData.score;
-                    currentQuestionIndex = cloudData.currentQuestionIndex;
-                    answersLog = cloudData.answersLog || [];
-                    userAnswers = cloudData.userAnswers || [];
-                    shuffledQuestions = cloudData.shuffledQuestions;
-                    
-                    els.userDisplayText.textContent = userName;
-                    els.userDisplayText.classList.remove('hidden');
-                    els.userDisplay.classList.remove('hidden');
-                    
-                    els.startScreen.classList.add('hidden');
-                    if (cloudData.isFinished) {
-                        renderResultsUI();
-                    } else {
-                        els.questionScreen.classList.remove('hidden');
-                        renderQuestion();
-                    }
-                }
-            } catch (error) {
-                console.warn("Sync from cloud failed, utilizing local state", error);
-            }
-        };
+            // --- CLEAR ALL LOGIC ---
+            document.getElementById('clearAllBtn').onclick = () => {
+                if (!confirm("Are you sure you want to clear all data? This cannot be undone.")) return;
+                masterData = [];
+                fileHeaders = [];
+                driveImages = [];
+                googleAccessToken = null;
+                localStorage.removeItem('linkerMasterData');
+                localStorage.removeItem('linkerFileHeaders');
+                localStorage.removeItem('linkerGoogleToken');
+                document.getElementById('fileInput').value = "";
+                renderTable();
+                showStatus("All data cleared.", "info");
+            };
 
-        const setupDashboardListener = () => {
-            if (!isAdmin || !user) return;
-            const qRef = collection(db, 'artifacts', appId, 'public', 'data', 'exam_results');
-            onSnapshot(qRef, (snapshot) => {
-                const results = [];
-                snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-                dashboardData = results; // Update global store
-                renderDashboard(results);
-            }, (error) => {
-                console.error("Dashboard Access Error:", error);
-                els.dashboardContent.innerHTML = `<div class="text-center py-10 text-red-500 font-bold"><p>ACCESS DENIED</p><p class="text-xs mt-2 text-white/50">Ensure Firestore Rules allow reading 'exam_results' for authenticated users.</p></div>`;
-            });
-        };
+            // --- FILE UPLOAD LOGIC ---
+            document.getElementById('dropZone').onclick = () => document.getElementById('fileInput').click();
+            document.getElementById('fileInput').onchange = async (e) => {
+                if (!e.target.files.length) return;
+                const f = e.target.files[0];
+                showStatus("Parsing file...", "info");
 
-        const shuffleArray = (array) => {
-            const arr = [...array];
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        };
-
-        window.startQuiz = () => {
-            const fname = els.inputFname.value.trim();
-            const sname = els.inputSname.value.trim();
-            if (!fname || !sname) { alert("Enter both names to begin."); return; }
-            userName = `${fname} ${sname}`;
-            els.userDisplayText.textContent = userName;
-            els.userDisplayText.classList.remove('hidden');
-            els.userDisplay.classList.remove('hidden');
-            els.startScreen.classList.add('hidden');
-            els.questionScreen.classList.remove('hidden');
-            score = 0;
-            currentQuestionIndex = 0;
-            answersLog = [];
-            userAnswers = [];
-            shuffledQuestions = shuffleArray(examDataRaw.questions);
-            syncToCloud();
-            renderQuestion();
-        };
-
-        window.renderQuestion = () => {
-            const q = shuffledQuestions[currentQuestionIndex];
-            if (!q) return;
-            isConfirmed = false;
-            currentSelection = null;
-            els.qNumber.textContent = currentQuestionIndex + 1;
-            els.progressText.textContent = `Question ${currentQuestionIndex + 1} of ${shuffledQuestions.length}`;
-            els.progressBar.style.width = `${(currentQuestionIndex / shuffledQuestions.length) * 100}%`;
-            els.qText.textContent = q.question;
-            if (q.hint) { els.hintText.textContent = q.hint; els.hintText.classList.remove('hidden'); }
-            else { els.hintText.classList.add('hidden'); }
-            
-            els.options.innerHTML = '';
-            
-            const opts = shuffleArray(q.answerOptions); 
-            
-            // IF REVIEW MODE
-            if (isReviewMode) {
-                const userAnswer = userAnswers[currentQuestionIndex] || {};
-                
-                // Show exit button
-                els.exitReviewBtn.classList.remove('hidden');
-
-                opts.forEach((opt, idx) => {
-                    const btn = document.createElement('button');
-                    btn.disabled = true; // Disable clicking
-                    btn.className = `w-full text-left p-5 rounded-2xl border border-white/10 bg-white/5 flex items-center group relative overflow-hidden opacity-100`;
-                    
-                    // Logic for coloring
-                    const isSelected = opt.text === userAnswer.selectedText;
-                    
-                    if (opt.isCorrect) {
-                        btn.classList.remove('border-white/10', 'bg-white/5');
-                        btn.classList.add('border-green-500', 'bg-green-500/10');
-                    } else if (isSelected && !opt.isCorrect) {
-                        btn.classList.remove('border-white/10', 'bg-white/5');
-                        btn.classList.add('border-red-500', 'bg-red-500/10');
-                    } else {
-                        btn.classList.add('opacity-40');
-                    }
-
-                    btn.innerHTML = `<div class="flex items-start"><span class="font-black text-[#00A3E1] mr-4 mt-0.5 text-lg">${labels[idx]}</span><span class="text-white font-medium flex-grow text-lg">${opt.text}</span></div>`;
-                    els.options.appendChild(btn);
-                });
-
-                // Show Feedback Immediately
-                els.feedbackArea.classList.remove('hidden');
-                const isCorr = userAnswer.isCorrect;
-                els.feedbackTitle.textContent = isCorr ? "Correct" : "Incorrect";
-                els.feedbackTitle.className = isCorr ? "font-black text-xl mb-1 text-green-500 uppercase tracking-tight" : "font-black text-xl mb-1 text-red-500 uppercase tracking-tight";
-                
-                // Find correct option for rationale
-                const correctOpt = opts.find(o => o.isCorrect);
-                els.feedbackRationale.textContent = correctOpt ? correctOpt.rationale : "";
-                
-                els.feedbackIcon.innerHTML = isCorr 
-                    ? `<div class="bg-green-500/10 p-3 rounded-full border border-green-500/20"><svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>` 
-                    : `<div class="bg-red-500/10 p-3 rounded-full border border-red-500/20"><svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></div>`;
-                
-                document.getElementById('next-btn').querySelector('span').textContent = (currentQuestionIndex === shuffledQuestions.length - 1) ? "Finish Review" : "Next Question";
-                els.simpleFooter.classList.add('hidden');
-                
-            } else {
-                // NORMAL EXAM MODE
-                els.exitReviewBtn.classList.add('hidden');
-                
-                opts.forEach((opt, idx) => {
-                    const btn = document.createElement('button');
-                    btn.className = `w-full text-left p-5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 flex items-center group relative overflow-hidden`;
-                    btn.innerHTML = `<div class="flex items-start"><span class="font-black text-[#00A3E1] mr-4 mt-0.5 text-lg">${labels[idx]}</span><span class="text-white font-medium flex-grow text-lg">${opt.text}</span></div>`;
-                    btn.onclick = () => selectOption(opt, btn, opts);
-                    els.options.appendChild(btn);
-                });
-                els.feedbackArea.classList.add('hidden');
-                els.simpleFooter.classList.add('hidden');
-            }
-        };
-
-        const selectOption = (opt, btn, allOptions) => {
-            if (isConfirmed) return;
-            Array.from(els.options.children).forEach(b => {
-                b.classList.remove('border-[#00A3E1]', 'bg-[#00A3E1]/10');
-                b.classList.add('border-white/10', 'bg-white/5');
-            });
-            btn.classList.add('border-[#00A3E1]', 'bg-[#00A3E1]/10');
-            btn.classList.remove('border-white/10', 'bg-white/5');
-            currentSelection = { opt, btn, allOptions };
-            if (isAdmin) {
-                els.feedbackArea.classList.remove('hidden');
-                els.feedbackTitle.textContent = "Staff Mode: Verify Choice";
-                els.feedbackRationale.textContent = "Confirm to see correctness logic.";
-                els.feedbackIcon.innerHTML = '';
-                document.getElementById('next-btn').querySelector('span').textContent = "Verify Choice";
-            } else {
-                els.simpleFooter.classList.remove('hidden');
-            }
-        };
-
-        window.handleConfirmNext = () => {
-            if (isReviewMode) { 
-                if (currentQuestionIndex < shuffledQuestions.length - 1) {
-                    currentQuestionIndex++;
-                    renderQuestion();
-                } else {
-                    // End of review
-                    isReviewMode = false;
-                    renderResultsUI();
-                }
-                return; 
-            }
-
-            if (!currentSelection) return;
-            if (!isConfirmed) {
-                isConfirmed = true;
-                const { opt, btn, allOptions } = currentSelection;
-                const q = shuffledQuestions[currentQuestionIndex];
-                
-                // SAVE USER ANSWER
-                userAnswers[currentQuestionIndex] = {
-                    selectedText: opt.text || "",
-                    isCorrect: !!opt.isCorrect,
-                    rationale: opt.rationale || ""
-                };
-
-                if (opt.isCorrect) score++;
-                answersLog.push({ module: q.module, correct: opt.isCorrect });
-                
-                if (isAdmin) {
-                    Array.from(els.options.children).forEach((b, i) => {
-                        if (allOptions[i].isCorrect) b.classList.add('border-green-500', 'bg-green-500/10');
-                        else if (b === btn) b.classList.add('border-red-500', 'bg-red-500/10');
-                    });
-                    els.feedbackTitle.textContent = opt.isCorrect ? "Correct" : "Incorrect";
-                    els.feedbackTitle.className = opt.isCorrect ? "font-black text-xl mb-1 text-green-500 uppercase tracking-tight" : "font-black text-xl mb-1 text-red-500 uppercase tracking-tight";
-                    els.feedbackRationale.textContent = opt.rationale || "";
-                    els.feedbackIcon.innerHTML = opt.isCorrect ? `<div class="bg-green-500/10 p-3 rounded-full border border-green-500/20"><svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>` : `<div class="bg-red-500/10 p-3 rounded-full border border-red-500/20"><svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></div>`;
-                    document.getElementById('next-btn').querySelector('span').textContent = "Continue";
-                } else { nextQuestion(); }
-            } else { nextQuestion(); }
-        };
-
-        const nextQuestion = () => {
-            currentQuestionIndex++;
-            syncToCloud();
-            if (currentQuestionIndex < shuffledQuestions.length) renderQuestion();
-            else finishExam();
-        };
-
-        const finishExam = () => {
-            els.questionScreen.classList.add('hidden');
-            syncToCloud(true);
-            renderResultsUI();
-        };
-
-        const renderResultsUI = () => {
-            els.startScreen.classList.add('hidden');
-            els.questionScreen.classList.add('hidden');
-            els.adminDashboard.classList.add('hidden');
-            els.resultsScreen.classList.remove('hidden');
-            els.candidateNameDisplay.textContent = `Candidate Profile: ${userName}`;
-            els.finalScore.textContent = score;
-            const pct = Math.round((score / 35) * 100);
-            els.finalProgress.style.width = `${pct}%`;
-            const modStats = {};
-            answersLog.forEach(log => {
-                if (!modStats[log.module]) modStats[log.module] = { total: 0, correct: 0 };
-                modStats[log.module].total++;
-                if (log.correct) modStats[log.module].correct++;
-            });
-            els.moduleBreakdown.innerHTML = '';
-            Object.entries(modStats).forEach(([module, stats]) => {
-                const mPct = Math.round((stats.correct / stats.total) * 100);
-                const color = mPct >= 80 ? 'bg-green-500' : (mPct >= 50 ? 'bg-yellow-500' : 'bg-red-500');
-                els.moduleBreakdown.innerHTML += `<div><div class="flex justify-between text-xs mb-3"><span class="font-bold text-white uppercase tracking-widest">${module}</span><span class="font-black text-white/60">${mPct}% (${stats.correct}/${stats.total})</span></div><div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden"><div class="${color} h-1.5 rounded-full" style="width: ${mPct}%"></div></div></div>`;
-            });
-
-            // Toggle admin back button
-            if (isAdmin) {
-                els.adminBackDashboardBtn.classList.remove('hidden');
-            } else {
-                els.adminBackDashboardBtn.classList.add('hidden');
-            }
-        };
-
-        const renderDashboard = (results) => {
-            if (results.length === 0) {
-                els.dashboardContent.innerHTML = `<div class="text-center py-20 text-white/20 font-bold uppercase tracking-widest">No candidates found.</div>`;
-                return;
-            }
-            els.dashboardContent.innerHTML = results.map(res => {
-                const pct = Math.round((res.score / 35) * 100);
-                const statusColor = pct >= 80 ? 'text-green-500' : (pct >= 50 ? 'text-yellow-500' : 'text-red-500');
-                const modSummary = {};
-                (res.answersLog || []).forEach(l => {
-                    if (!modSummary[l.module]) modSummary[l.module] = { c:0, t:0 };
-                    modSummary[l.module].t++; if (l.correct) modSummary[l.module].c++;
-                });
-                const summaryHtml = Object.entries(modSummary).map(([m, s]) => `<span class="px-2 py-0.5 rounded-full bg-white/5 border border-white/5 text-[9px] uppercase font-bold">${m.split(' ')[0]}: ${Math.round((s.c/s.t)*100)}%</span>`).join('');
-                return `
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 group">
-                        <div class="flex-grow">
-                            <div class="text-xs font-black uppercase tracking-widest text-[#00A3E1] mb-1">Candidate</div>
-                            <h4 class="text-xl font-bold text-white">${res.userName || 'Anonymous'}</h4>
-                            <div class="flex flex-wrap gap-2 mt-3">${summaryHtml}</div>
-                        </div>
-                        <div class="text-right flex items-center gap-6">
-                            <div>
-                                <div class="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1 text-right">Performance</div>
-                                <div class="text-3xl font-black ${statusColor}">${res.score}<span class="text-lg opacity-30">/35</span></div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="viewUserResults('${res.id}')" class="p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white/80 hover:text-white" title="View Details">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                </button>
-                                <button onclick="deleteCandidate('${res.id}')" class="p-3 bg-red-500/10 rounded-xl hover:bg-red-500/20 transition-all text-red-500/80 hover:text-red-500" title="Delete Record">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>`;
-            }).join('');
-        };
-
-        window.viewUserResults = async (uid) => {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'exam_results', uid);
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-                const data = snap.data();
-                userName = data.userName; score = data.score; answersLog = data.answersLog; userAnswers = data.userAnswers || []; shuffledQuestions = data.shuffledQuestions;
-                renderResultsUI();
-            }
-        };
-
-        window.deleteCandidate = async (uid) => {
-            if (confirm("Are you sure you want to permanently delete this candidate's record? This action cannot be undone.")) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'exam_results', uid));
-                    // The snapshot listener will automatically refresh the UI
+                    const data = await f.arrayBuffer();
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { header: 1 });
+                    
+                    if (sheetData.length < 2) throw new Error("Empty or invalid Yoco file");
+                    
+                    fileHeaders = sheetData[0];
+                    masterData = sheetData.slice(1).filter(row => row.length > 0 && row[NAME_COL_INDEX]); // Skip empty rows
+
+                    showStatus(`Loaded ${masterData.length} items from ${f.name}`, "success");
+                    saveToCache();
+                    autoMatchImages(); // Trigger match if images already fetched
+                    renderTable();
+                } catch (err) {
+                    console.error("Spreadsheet Error:", err);
+                    showStatus("Error reading file. Ensure it's a valid Yoco Export.", "error");
+                }
+            };
+
+            // --- DRIVE FETCH & MATCH LOGIC ---
+            function fuzzyMatch(name1, name2) {
+                if (!name1 || !name2) return false;
+                const s1 = name1.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+                const s2 = name2.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (!s1 || !s2) return false;
+                return s1.includes(s2) || s2.includes(s1);
+            }
+
+            // --- AUTH HELPER: get a valid Google access token (cached or via popup) ---
+            async function getGoogleAccessToken() {
+                if (googleAccessToken) return googleAccessToken;
+                const provider = new GoogleAuthProvider();
+                provider.addScope('https://www.googleapis.com/auth/drive.readonly');
+                const result = await signInWithPopup(auth, provider);
+                const credential = GoogleAuthProvider.credentialFromResult(result);
+                googleAccessToken = credential.accessToken;
+                localStorage.setItem('linkerGoogleToken', googleAccessToken);
+                return googleAccessToken;
+            }
+
+            document.getElementById('fetchDriveImagesBtn').onclick = async () => {
+                const urlInput = document.getElementById('driveFolderInput').value.trim();
+                
+                let folderId = null;
+                const match = urlInput.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+                if (match) folderId = match[1];
+                else if (urlInput.length > 15 && !urlInput.includes('/')) folderId = urlInput;
+                
+                if (!folderId) { showStatus("Invalid Google Drive Folder URL", "error"); return; }
+
+                try {
+                    const token = await getGoogleAccessToken();
+                    await fetchImagesWithToken(token, folderId);
                 } catch (e) {
-                    console.error("Error deleting candidate:", e);
-                    alert("Failed to delete record. Check console for details.");
+                    console.error("Firebase Auth failed:", e);
+                    showStatus(`Google Login failed: ${e.message}`, "error");
+                }
+            };
+
+            async function fetchImagesWithToken(token, folderId) {
+                const btn = document.getElementById('fetchDriveImagesBtn');
+                btn.disabled = true; btn.textContent = "FETCHING...";
+                try {
+                    const driveApiUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&fields=files(id,name,mimeType,thumbnailLink,webContentLink)`;
+                    const res = await fetch(driveApiUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        if (res.status === 401) {
+                            // Token expired — clear it and silently re-authenticate
+                            googleAccessToken = null;
+                            localStorage.removeItem('linkerGoogleToken');
+                            showStatus("Session expired. Signing in again...", "info");
+                            btn.textContent = "FETCH DRIVE IMAGES"; btn.disabled = false;
+                            const newToken = await getGoogleAccessToken();
+                            return fetchImagesWithToken(newToken, folderId);
+                        }
+                        throw new Error(errorData.error?.message || "Drive API fetch failed");
+                    }
+                    const data = await res.json();
+                    
+                    driveImages = data.files.map(f => {
+                        // Use thumbnailLink (removing the default =s220 size constraint) as it bypasses Google's embedding blocks
+                        const directImgUrl = f.thumbnailLink 
+                            ? f.thumbnailLink.replace(/=s\d+$/, '=s1000') 
+                            : `https://drive.google.com/thumbnail?id=${f.id}&sz=w1000`;
+                            
+                        return { id: f.id, name: f.name, url: directImgUrl };
+                    });
+
+                    autoMatchImages();
+                } catch (err) {
+                    console.error("Drive Fetch Error:", err);
+                    showStatus(err.message, "error");
+                } finally {
+                    btn.textContent = "FETCH DRIVE IMAGES";
+                    btn.disabled = false;
                 }
             }
-        };
 
-        window.generateReport = () => {
-            if (!dashboardData || dashboardData.length === 0) {
-                alert("No data available to generate report.");
-                return;
+            function autoMatchImages() {
+                if (driveImages.length === 0 || masterData.length === 0) return;
+                let matchCount = 0;
+                masterData.forEach(row => {
+                    if (!row[IMAGE_COL_INDEX]) {
+                        const matchedImg = driveImages.find(img => fuzzyMatch(img.name.split('.')[0], row[NAME_COL_INDEX]));
+                        if (matchedImg) {
+                            row[IMAGE_COL_INDEX] = matchedImg.url;
+                            matchCount++;
+                        }
+                    }
+                });
+                if (matchCount > 0) saveToCache();
+                showStatus(`Fetched ${driveImages.length} images. Auto-matched ${matchCount} items.`, "success");
+                renderTable();
             }
 
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // --- SECTION 1: BULK SUMMARY ---
-            doc.setFontSize(18);
-            doc.text("Certification Exam - Bulk Report", 14, 20);
-            doc.setFontSize(10);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-
-            const summaryHeaders = [["Candidate Name", "Score", "Percentage", "Date"]];
-            const summaryRows = dashboardData.map(d => {
-                const date = d.lastUpdated ? new Date(d.lastUpdated.seconds * 1000).toLocaleDateString() : "N/A";
-                const pct = Math.round((d.score / 35) * 100) + "%";
-                return [d.userName, `${d.score}/35`, pct, date];
-            });
-
-            doc.autoTable({
-                head: summaryHeaders,
-                body: summaryRows,
-                startY: 35,
-                theme: 'grid',
-                headStyles: { fillColor: [0, 163, 225] } // YOCO Blue
-            });
-
-            // --- SECTION 2: DETAILED BREAKDOWN PER USER ---
-            dashboardData.forEach((d) => {
-                doc.addPage();
+            // --- TABLE UI ---
+            function renderTable() {
+                const search = document.getElementById('masterFilter').value.toLowerCase();
+                const tbody = document.getElementById('tableBody'); tbody.innerHTML = "";
                 
-                // Header per user
-                doc.setFontSize(16);
-                doc.text(`Individual Results: ${d.userName}`, 14, 20);
-                
-                doc.setFontSize(12);
-                doc.text(`Total Score: ${d.score}/35 (${Math.round((d.score / 35) * 100)}%)`, 14, 30);
-                
-                // Calculate Module Breakdown
-                const modStats = {};
-                (d.answersLog || []).forEach(log => {
-                    if (!modStats[log.module]) modStats[log.module] = { total: 0, correct: 0 };
-                    modStats[log.module].total++;
-                    if (log.correct) modStats[log.module].correct++;
+                document.getElementById('resultsTable').classList.toggle('hidden', masterData.length === 0);
+                document.getElementById('emptyState').classList.toggle('hidden', masterData.length > 0);
+                document.getElementById('controlsBar').classList.toggle('hidden', masterData.length === 0);
+                document.getElementById('clearAllBtn').classList.toggle('hidden', masterData.length === 0);
+
+                masterData.forEach((row, index) => {
+                    const name = (row[NAME_COL_INDEX] || '').toString();
+                    if (!name.toLowerCase().includes(search)) return;
+
+                    const cat = row[CAT_COL_INDEX] || '-';
+                    const price = row[PRICE_COL_INDEX] || '0.00';
+                    const imgUrl = row[IMAGE_COL_INDEX];
+
+                    const r = document.createElement('tr');
+                    const imageHtml = imgUrl 
+                        ? `<img src="${imgUrl}" class="w-10 h-10 object-cover rounded-lg border border-slate-200 cursor-pointer hover:border-cyan" onclick="openImagePicker(${index})" title="Click to change image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2JjYmNiIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cGF0aCBkPSJNMjEgMTVMMTYgMTBMNSAyMSIvPjwvc3ZnPg=='">`
+                        : `<button onclick="openImagePicker(${index})" class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-bold hover:bg-cyan/10 hover:text-cyan transition-colors uppercase">Link Image</button>`;
+                        
+                    r.innerHTML = `
+                        <td class="px-8 py-3">${imageHtml}</td>
+                        <td class="px-8 py-3 font-bold">${name}</td>
+                        <td class="px-8 py-3 text-slate-500 font-medium">${cat}</td>
+                        <td class="px-8 py-3 text-cyan font-black">R${price}</td>`;
+                    tbody.appendChild(r);
                 });
-
-                const detailHeaders = [["Module", "Correct", "Total", "Accuracy"]];
-                const detailRows = Object.entries(modStats).map(([mod, stats]) => {
-                    const pct = Math.round((stats.correct / stats.total) * 100) + "%";
-                    return [mod, stats.correct, stats.total, pct];
-                });
-
-                doc.autoTable({
-                    head: detailHeaders,
-                    body: detailRows,
-                    startY: 40,
-                    theme: 'striped',
-                    headStyles: { fillColor: [40, 40, 40] }
-                });
-            });
-
-            doc.save("Yoco_Certification_Report.pdf");
-        };
-
-        window.backToDashboard = () => {
-            els.resultsScreen.classList.add('hidden');
-            els.questionScreen.classList.add('hidden');
-            els.adminDashboard.classList.remove('hidden');
-        };
-
-        window.toggleAdminPanel = () => {
-            pendingNewAttempt = false;
-            els.adminModalTitle.textContent = "Administrator Portal";
-            els.adminVerifyBtn.textContent = "Unlock";
-            els.adminModal.classList.toggle('hidden');
-            els.adminPwInput.value = ''; els.adminMsg.textContent = '';
-        };
-
-        window.requestNewAttempt = () => {
-            pendingNewAttempt = true;
-            els.adminModalTitle.textContent = "Staff Approval Required";
-            els.adminVerifyBtn.textContent = "Authorize New Attempt";
-            els.adminModal.classList.remove('hidden');
-            els.adminPwInput.value = ''; els.adminMsg.textContent = '';
-        };
-
-        window.verifyAdmin = async () => {
-            const pw = els.adminPwInput.value;
-            if (ALLOWED_ADMIN_PASSWORDS.includes(pw)) {
-                if (pendingNewAttempt) {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'exam_results', user.uid);
-                    await deleteDoc(docRef);
-                    localStorage.removeItem(SESSION_KEY);
-                    location.reload();
-                } else {
-                    isAdmin = true;
-                    els.adminIndicator.classList.remove('hidden');
-                    els.adminLogoutBtn.classList.remove('hidden');
-                    els.scoreBadge.classList.remove('hidden');
-                    els.adminModal.classList.add('hidden');
-                    setupDashboardListener();
-                    toggleAdminDashboard();
-                }
-            } else {
-                els.adminMsg.textContent = "Invalid Passcode";
-                els.adminPwInput.classList.add('shake');
-                setTimeout(() => els.adminPwInput.classList.remove('shake'), 500);
             }
-        };
 
-        window.toggleAdminDashboard = () => {
-            els.adminDashboard.classList.toggle('hidden');
-            els.startScreen.classList.add('hidden');
-            els.questionScreen.classList.add('hidden');
-            els.resultsScreen.classList.add('hidden');
-            if (els.adminDashboard.classList.contains('hidden')) {
-                if (userName) renderResultsUI(); else els.startScreen.classList.remove('hidden');
+            document.getElementById('masterFilter').oninput = renderTable;
+
+            // --- IMAGE PICKER ---
+            window.openImagePicker = (index) => {
+                if (driveImages.length === 0) { showStatus("Please fetch images from Google Drive first.", "error"); return; }
+                currentlyPickingImageForIndex = index;
+                document.getElementById('imagePickerProductName').textContent = masterData[index][NAME_COL_INDEX];
+                document.getElementById('imagePickerSearch').value = "";
+                renderImagePickerGrid(driveImages);
+                document.getElementById('imagePickerModal').classList.remove('hidden');
+            };
+
+            function renderImagePickerGrid(images) {
+                const grid = document.getElementById('imagePickerGrid'); grid.innerHTML = "";
+                images.forEach(img => {
+                    const d = document.createElement('div');
+                    d.className = "flex flex-col gap-2 p-2 rounded-xl border border-transparent hover:border-cyan hover:bg-cyan/5 cursor-pointer transition-all";
+                    d.innerHTML = `
+                        <img src="${img.url}" class="w-full aspect-square object-cover rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                        <span class="text-[10px] font-medium text-center truncate">${img.name}</span>`;
+                    d.onclick = () => {
+                        masterData[currentlyPickingImageForIndex][IMAGE_COL_INDEX] = img.url;
+                        document.getElementById('imagePickerModal').classList.add('hidden');
+                        saveToCache();
+                        renderTable();
+                    };
+                    grid.appendChild(d);
+                });
             }
-        };
 
-        window.logoutAdmin = () => {
-            isAdmin = false;
-            els.adminIndicator.classList.add('hidden');
-            els.adminLogoutBtn.classList.add('hidden');
-            els.adminDashboard.classList.add('hidden');
-            if (userName) renderResultsUI(); else els.startScreen.classList.remove('hidden');
-        };
+            document.getElementById('closeImagePickerModal').onclick = () => document.getElementById('imagePickerModal').classList.add('hidden');
+            document.getElementById('imagePickerSearch').oninput = (e) => {
+                renderImagePickerGrid(driveImages.filter(img => img.name.toLowerCase().includes(e.target.value.toLowerCase())));
+            };
 
-        window.startReview = () => {
-            isReviewMode = true; 
-            currentQuestionIndex = 0;
-            els.resultsScreen.classList.add('hidden');
-            els.questionScreen.classList.remove('hidden');
-            renderQuestion();
-        };
-
-        window.exitReview = () => {
-            isReviewMode = false;
-            renderResultsUI();
-        };
-
-        window.goHome = () => {
-            // Reset UI
-            els.resultsScreen.classList.add('hidden');
-            els.startScreen.classList.remove('hidden');
-            els.userDisplayText.classList.add('hidden');
-            els.userDisplay.classList.add('hidden');
+            // --- EXPORT ---
+            document.getElementById('excelBtn').onclick = () => {
+                const wb = XLSX.utils.book_new(); 
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([fileHeaders, ...masterData]), "Products");
+                XLSX.writeFile(wb, `Updated_Yoco_Export.xlsx`);
+            };
             
-            // Clear inputs
-            els.inputFname.value = "";
-            els.inputSname.value = "";
+            // Execute initial load
+            loadFromCache();
             
-            // Reset State
-            userName = "";
-            score = 0;
-            currentQuestionIndex = 0;
-            answersLog = [];
-            userAnswers = [];
-            isConfirmed = false;
+            // Save folder URL immediately if user types it
+            document.getElementById('driveFolderInput').oninput = () => {
+                localStorage.setItem('linkerDriveFolder', document.getElementById('driveFolderInput').value);
+            };
         };
-
-        initAuth();
+        init();
     </script>
 </body>
 </html>
